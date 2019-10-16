@@ -7,6 +7,7 @@ import com.konka.databasedemo.mapper.ErrListMapper;
 import com.konka.databasedemo.model.po.DataBase;
 import com.konka.databasedemo.model.po.ErrList;
 import com.konka.databasedemo.model.po.Link;
+import com.konka.databasedemo.model.request.LinkInDTO;
 import com.konka.databasedemo.properties.VariableProperties;
 import com.konka.databasedemo.service.DataBaseService;
 import lombok.extern.slf4j.Slf4j;
@@ -19,9 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -41,10 +40,6 @@ public class DataBaseServiceImpl implements DataBaseService {
     @Autowired
     private DataBaseMapper dataBaseMapper;
     
-    @Autowired
-    private ErrListMapper errListMapper;
-    
-
     /**
      * 可变配置
      */
@@ -186,7 +181,6 @@ public class DataBaseServiceImpl implements DataBaseService {
                 e.printStackTrace();
             }
         }
-        
         else{
             throw new BusinessException(ExceptionCode.DataBase.FILE_ERROR_CODE, ExceptionCode.DataBase.FILE_ERROR_MSG);
             // "文件格式不对!请传后缀为“docx”的文件";
@@ -194,74 +188,49 @@ public class DataBaseServiceImpl implements DataBaseService {
         return errList;
     }
     
+    
 @Override
-    public List<ErrList> link(Link link,MultipartFile file) {
-        // MySQL 8.0 以下版本 - JDBC 驱动名及数据库 URL
-        final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-        String url = link.getUrl();
-        List<ErrList> list=null;
-        // MySQL 8.0 以上版本 - JDBC 驱动名及数据库 URL
-        //static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-        //static final String DB_URL = "jdbc:mysql://localhost:3306/RUNOOB?useSSL=false&serverTimezone=UTC";
+    public List<ErrList> link(LinkInDTO link, MultipartFile file) {
+    // 链接数据库，获取表名列表
+    String driver = "com.mysql.jdbc.Driver";
     
+    String url = "jdbc:mysql://" + link.getDatasourceUrl() + "/" + link.getDatasourceDatabase();
     
-        // 数据库的用户名与密码，需要根据自己的设置
-         String user = link.getUser();
-         String pwd = link.getPwd();
-            if (url==null||user==null){
-            log.info("登陆数据库参数为空");
-            throw new BusinessException(ExceptionCode.Login.ILLEGAL_PARAM_CODE, ExceptionCode.Login.ILLEGAL_PARAM_MSG);
-            }
-            Connection conn = null;
-            try{
-                // 注册 JDBC 驱动
-                Class.forName(JDBC_DRIVER);
-            
-                // 打开链接
-                log.info("连接数据库...");
-                conn = DriverManager.getConnection(url,user,pwd);
-                if(conn.isClosed()) {
-                    log.info("连接数据库失败");
-                    throw new BusinessException(ExceptionCode.Login.LOGIN_FAULT_CODE, ExceptionCode.Login.LOGIN_FAULT_MSG);
-                }else {
-                    log.info("连接数据库成功");
-                    if (file!=null) {
-                        String originalFilename = file.getOriginalFilename();
-                        log.info("fileName = {}", originalFilename);
-                        String fileType = originalFilename.substring(originalFilename.lastIndexOf(".") + 1, originalFilename.length());
-                        //校验文件后缀名
-                        if(fileType.equals(variableProperties.getImportDataProperties().getFileType())){
-                            try {
-                              list = this.importFile(file);
-                          }catch (Exception e){
-                                e.printStackTrace();
-                              log.info("读取文件失败");
-                          } }
-                        else{
-                            throw  new BusinessException(ExceptionCode.DataBase.FILE_ERROR_CODE, ExceptionCode.DataBase.FILE_ERROR_MSG);
-                            // "文件格式不对!请传后缀为“docx”的文件";
-                    }
-                    }
-                }
-                conn.close();
-            } catch(Exception se){
-                // 处理 JDBC 错误
-                se.printStackTrace();
-                log.info("连接数据库失败");
-                throw new BusinessException(ExceptionCode.Login.ILLEGAL_PARAM_CODE, ExceptionCode.Login.ILLEGAL_PARAM_MSG);
-            }// 处理 Class.forName 错误
-            finally{
-                // 关闭资源
-                try{
-                    if(conn!=null) {
-                        conn.close();
-                    }
-                }catch(SQLException se){
-                    se.printStackTrace();
-                }
-            }
-            log.info("Goodbye!");
-            
-        return list;
+    String username =link.getDatasourceUsername();
+    
+    String password =link.getDatasourcePassword();
+    
+    String sql = "show tables;";
+    
+    ArrayList<String> tableNameList = new ArrayList<>();
+    
+    try {
+        Class.forName(driver);
+    } catch (ClassNotFoundException e) {
+        throw new BusinessException(ExceptionCode.Project.FRAMEWORK_GENERATE_ERROR_CODE, ExceptionCode.Project.FRAMEWORK_GENERATE_ERROR_MSG + "加载驱动类错误");
     }
+    
+    try (Connection connection = DriverManager.getConnection(url, username, password);
+         PreparedStatement preparedStatement = connection.prepareStatement(sql);
+         ResultSet resultSet = preparedStatement.executeQuery()){
+        
+        while (resultSet.next()) {
+            
+            tableNameList.add(resultSet.getString(1));
+            
+        }
+        
+    } catch (Exception e) {
+        
+        log.error("数据库连接失败", e);
+        throw new BusinessException(ExceptionCode.Project.FRAMEWORK_GENERATE_ERROR_CODE, ExceptionCode.Project.FRAMEWORK_GENERATE_ERROR_MSG + "数据库连接失败");
+        
+    }
+    if(file==null){
+        log.error("文件为空");
+        throw new BusinessException(ExceptionCode.Project.FRAMEWORK_GENERATE_ERROR_CODE, ExceptionCode.Project.FRAMEWORK_GENERATE_ERROR_MSG + "数据库连接成功，但未提交文件");
+    }
+    
+    return this.importFile(file);
+}
 }

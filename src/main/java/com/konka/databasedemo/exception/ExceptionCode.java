@@ -37,7 +37,7 @@ public interface ExceptionCode {
         String ILLEGAL_PARAM_MSG = "参数不合法";
 
         int FRAMEWORK_GENERATE_ERROR_CODE = 9111002;
-        String FRAMEWORK_GENERATE_ERROR_MSG = "代码生成错误：";
+        String FRAMEWORK_GENERATE_ERROR_MSG = "查询错误：";
 
     }
 

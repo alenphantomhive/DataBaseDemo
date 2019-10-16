@@ -3,6 +3,7 @@ package com.konka.databasedemo.controller;
 import com.konka.databasedemo.common.Response;
 import com.konka.databasedemo.exception.ExceptionCode;
 import com.konka.databasedemo.model.po.Link;
+import com.konka.databasedemo.model.request.LinkInDTO;
 import com.konka.databasedemo.service.DataBaseService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -39,10 +40,10 @@ public class DataBaseController {
     
     
 
-    
-    /**
+/*
+    *//**
      * 通过Word导入数据字典
-     */
+     *//*
     @PostMapping("/import")
     @ApiOperation("通过Word导入数据字典")
     @ApiResponses({
@@ -52,7 +53,7 @@ public class DataBaseController {
     })
     public Response<List> importFile(MultipartFile file){
         return new Response<>(databaseService.importFile(file));
-    }
+    }*/
     
     /**
      * 连接数据库
@@ -66,7 +67,7 @@ public class DataBaseController {
             @ApiResponse(code =ExceptionCode.DataBase.SERVER_NOT_FOUND_CODE,message =ExceptionCode.DataBase.SERVER_NOT_FOUND_MSG),
             @ApiResponse(code = ExceptionCode.DataBase.ILLEGAL_PARAM_CODE,message =ExceptionCode.DataBase.FILE_ERROR_MSG)
     })
-    public Response<List> link(Link link,MultipartFile file) {
+    public Response<List> link(LinkInDTO link, MultipartFile file) {
         return new Response<>(databaseService.link(link,file));
     }
     
