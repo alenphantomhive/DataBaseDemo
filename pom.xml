@@ -65,7 +65,7 @@
         <com.konka.soa.ksoa-api.version>0.0.5</com.konka.soa.ksoa-api.version>
 
         <!--dubbo-->
-        <com.alibaba.dubbo.version>2.5.3</com.alibaba.dubbo.version>
+        <com.alibaba.dubbo.version>2.6.9</com.alibaba.dubbo.version>
         <com.101tec.zkclient.version>0.5</com.101tec.zkclient.version>
 
         <!--POI-->
